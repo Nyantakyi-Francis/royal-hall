@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: transparent;
+  color: #000000;
+}
+
+@layer base {
+  * {
+    @apply selection:bg-emerald-200 selection:text-black;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply border border-black/10 bg-white/70 shadow-xl shadow-emerald-900/5 backdrop-blur supports-[backdrop-filter]:bg-white/50;
+  }
+
+  .glass-soft {
+    @apply border border-black/10 bg-white/60 shadow-md shadow-black/5 backdrop-blur supports-[backdrop-filter]:bg-white/40;
+  }
+}
