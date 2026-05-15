@@ -22,6 +22,7 @@ values
   ('EAST_LEGON_BLOG', 'R19', 6)
 on conflict (code) do nothing;
 
+
 insert into public.logistics_items (
   item_description,
   quantity,
