@@ -7,8 +7,21 @@ export const dynamic = "force-dynamic";
 export default async function StudentRoomsPage() {
   const { supabase, user } = await requireUser();
 
-  const [{ data: profile }, { data: pending }, { data: rooms }] = await Promise.all([
-    supabase.from("profiles").select("room_id").eq("user_id", user.id).maybeSingle(),
+  let { data: profile } = await supabase.from("profiles").select("room_id").eq("user_id", user.id).maybeSingle();
+
+  if (!profile) {
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const fullName = (meta.full_name ?? meta.fullName) as string | undefined;
+    const level = meta.level as "LEVEL_100" | "LEVEL_200" | "LEVEL_300" | undefined;
+    const hall = (meta.hall as string | undefined) ?? "HALL_1";
+    if (fullName && level) {
+      await supabase.from("profiles").insert({ user_id: user.id, full_name: fullName, level, hall });
+      const res = await supabase.from("profiles").select("room_id").eq("user_id", user.id).maybeSingle();
+      profile = res.data ?? null;
+    }
+  }
+
+  const [{ data: pending }, { data: rooms }] = await Promise.all([
     supabase
       .from("room_requests")
       .select("requested_room:rooms(code, blog)")
@@ -46,4 +59,3 @@ export default async function StudentRoomsPage() {
     </div>
   );
 }
-

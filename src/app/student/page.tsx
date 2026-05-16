@@ -5,11 +5,27 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentHomePage() {
   const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
     .select("full_name, level, hall, room_id")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (!profile) {
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const fullName = (meta.full_name ?? meta.fullName) as string | undefined;
+    const level = meta.level as "LEVEL_100" | "LEVEL_200" | "LEVEL_300" | undefined;
+    const hall = (meta.hall as string | undefined) ?? "HALL_1";
+    if (fullName && level) {
+      await supabase.from("profiles").insert({ user_id: user.id, full_name: fullName, level, hall });
+      const res = await supabase
+        .from("profiles")
+        .select("full_name, level, hall, room_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      profile = res.data ?? null;
+    }
+  }
 
   const assignedRoomId = profile?.room_id ?? null;
   const { data: assignedRoom } = assignedRoomId
@@ -49,4 +65,3 @@ export default async function StudentHomePage() {
     </div>
   );
 }
-

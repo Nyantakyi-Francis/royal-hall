@@ -26,6 +26,9 @@ function friendlyRequestError(insertError: { code?: string | null; message: stri
   if (insertError.code === "23505" || message.includes("room_requests_one_pending_per_student")) {
     return "Already have a room request pending.";
   }
+  if (insertError.code === "23503" || message.includes("room_requests_student_user_id_fkey")) {
+    return "Your account setup is incomplete. Please refresh and try again, or contact an admin.";
+  }
   return message;
 }
 
@@ -49,6 +52,44 @@ export default function RoomSelectionClient({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
       setError("Please log in again.");
+      return;
+    }
+
+    const { data: existingProfile, error: profileSelectError } = await supabase
+      .from("profiles")
+      .select("user_id, room_id")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+    if (profileSelectError) {
+      setError("Unable to verify your student profile. Please try again.");
+      return;
+    }
+
+    if (!existingProfile) {
+      const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      const fullName = (meta.full_name ?? meta.fullName) as string | undefined;
+      const level = meta.level as "LEVEL_100" | "LEVEL_200" | "LEVEL_300" | undefined;
+      const hall = (meta.hall as string | undefined) ?? "HALL_1";
+
+      if (!fullName || !level) {
+        setError("Your account setup is incomplete. Please contact an admin.");
+        return;
+      }
+
+      const { error: profileInsertError } = await supabase.from("profiles").insert({
+        user_id: data.user.id,
+        full_name: fullName,
+        level,
+        hall,
+      });
+
+      if (profileInsertError) {
+        setError("Unable to finish setting up your account. Please try again.");
+        return;
+      }
+    } else if (existingProfile.room_id) {
+      setError("You already have a room assigned.");
       return;
     }
 
