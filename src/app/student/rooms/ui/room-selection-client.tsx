@@ -43,15 +43,18 @@ export default function RoomSelectionClient({
 }) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRequesting, setIsRequesting] = useState(false);
   const [blog, setBlog] = useState<string>(rooms[0]?.blog ?? "MAIN_BLOG");
 
   async function requestRoom(roomId: string) {
     setError(null);
     setStatus(null);
+    setIsRequesting(true);
     const supabase = createSupabaseBrowserClient();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
       setError("Please log in again.");
+      setIsRequesting(false);
       return;
     }
 
@@ -63,6 +66,7 @@ export default function RoomSelectionClient({
 
     if (profileSelectError) {
       setError("Unable to verify your student profile. Please try again.");
+      setIsRequesting(false);
       return;
     }
 
@@ -74,6 +78,7 @@ export default function RoomSelectionClient({
 
       if (!fullName || !level) {
         setError("Your account setup is incomplete. Please contact an admin.");
+        setIsRequesting(false);
         return;
       }
 
@@ -86,10 +91,12 @@ export default function RoomSelectionClient({
 
       if (profileInsertError) {
         setError("Unable to finish setting up your account. Please try again.");
+        setIsRequesting(false);
         return;
       }
     } else if (existingProfile.room_id) {
       setError("You already have a room assigned.");
+      setIsRequesting(false);
       return;
     }
 
@@ -101,9 +108,11 @@ export default function RoomSelectionClient({
 
     if (insertError) {
       setError(friendlyRequestError(insertError));
+      setIsRequesting(false);
       return;
     }
     setStatus("Request submitted. Waiting for admin feedback.");
+    setIsRequesting(false);
   }
 
   const blogs = Array.from(new Set(rooms.map((r) => r.blog)));
@@ -126,6 +135,11 @@ export default function RoomSelectionClient({
       {status && (
         <div className="mb-4 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm text-black">
           {status}
+        </div>
+      )}
+      {isRequesting && (
+        <div className="mb-4 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm text-black">
+          Submitting request...
         </div>
       )}
       {error && (
@@ -154,7 +168,7 @@ export default function RoomSelectionClient({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((r) => {
           const full = r.occupied_count >= r.capacity;
-          const disabled = !!assignedRoom || !!pendingRequest;
+          const disabled = !!assignedRoom || !!pendingRequest || isRequesting;
           return (
             <button
               key={r.id}

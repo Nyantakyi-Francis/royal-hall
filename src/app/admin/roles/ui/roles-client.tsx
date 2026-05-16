@@ -7,11 +7,13 @@ export default function RolesClient({ canManage }: { canManage: boolean }) {
   const [role, setRole] = useState<"HALL_MASTER" | "HALL_PRESIDENT">("HALL_MASTER");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   async function submit(action: "SET" | "REMOVE") {
     setError(null);
     setStatus(null);
+    setSaving(true);
     const res = await fetch("/api/admin/roles", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -20,9 +22,10 @@ export default function RolesClient({ canManage }: { canManage: boolean }) {
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(json?.error ?? "Request failed");
+      setSaving(false);
       return;
     }
-    setStatus("Saved.");
+    setStatus("Saved. Refreshing...");
     startTransition(() => window.location.reload());
   }
 
@@ -52,7 +55,7 @@ export default function RolesClient({ canManage }: { canManage: boolean }) {
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 w-full rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm outline-none backdrop-blur focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
             placeholder="name@gmail.com"
-            disabled={!canManage || isPending}
+            disabled={!canManage || isPending || saving}
           />
         </label>
         <label className="block">
@@ -61,7 +64,7 @@ export default function RolesClient({ canManage }: { canManage: boolean }) {
             value={role}
             onChange={(e) => setRole(e.target.value as "HALL_MASTER" | "HALL_PRESIDENT")}
             className="mt-1 w-full rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm outline-none backdrop-blur focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-            disabled={!canManage || isPending}
+            disabled={!canManage || isPending || saving}
           >
             <option value="HALL_MASTER">Hall Master</option>
             <option value="HALL_PRESIDENT">Hall President</option>
@@ -72,19 +75,19 @@ export default function RolesClient({ canManage }: { canManage: boolean }) {
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          disabled={!canManage || isPending || !email}
+          disabled={!canManage || isPending || saving || !email}
           onClick={() => submit("SET")}
           className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-emerald-900/10 hover:bg-emerald-700 disabled:opacity-60"
         >
-          Set role
+          {saving ? "Saving..." : "Set role"}
         </button>
         <button
           type="button"
-          disabled={!canManage || isPending || !email}
+          disabled={!canManage || isPending || saving || !email}
           onClick={() => submit("REMOVE")}
           className="rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium shadow-sm shadow-black/5 backdrop-blur hover:bg-emerald-50/60 disabled:opacity-60"
         >
-          Remove admin
+          {saving ? "Saving..." : "Remove admin"}
         </button>
       </div>
     </div>

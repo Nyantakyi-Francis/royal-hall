@@ -37,6 +37,7 @@ export default function AdminAllocationsClient({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const roomsById = useMemo(() => new Map(rooms.map((r) => [r.id, r])), [rooms]);
@@ -44,6 +45,7 @@ export default function AdminAllocationsClient({
   async function decide(payload: unknown) {
     setError(null);
     setStatus(null);
+    setSaving(true);
     const res = await fetch("/api/admin/allocations/decide", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -52,6 +54,7 @@ export default function AdminAllocationsClient({
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(json?.error ?? "Request failed");
+      setSaving(false);
       return;
     }
     setStatus("Saved. Refreshing…");
@@ -68,6 +71,11 @@ export default function AdminAllocationsClient({
       {status && (
         <div className="mb-4 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm text-black">
           {status}
+        </div>
+      )}
+      {saving && !status && (
+        <div className="mb-4 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm text-black">
+          Saving...
         </div>
       )}
       {error && (
@@ -123,7 +131,7 @@ export default function AdminAllocationsClient({
                       <select
                         className="w-full rounded-xl border border-black/20 px-3 py-2 text-sm"
                         defaultValue={r.requested_room.id}
-                        disabled={!canDecide || isPending}
+                        disabled={!canDecide || isPending || saving}
                         onChange={(e) =>
                           decide({
                             requestId: r.id,
@@ -144,7 +152,7 @@ export default function AdminAllocationsClient({
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          disabled={!canDecide || isPending}
+                          disabled={!canDecide || isPending || saving}
                           onClick={() =>
                             decide({
                               requestId: r.id,
@@ -157,7 +165,7 @@ export default function AdminAllocationsClient({
                         </button>
                         <button
                           type="button"
-                          disabled={!canDecide || isPending}
+                          disabled={!canDecide || isPending || saving}
                           onClick={() =>
                             decide({
                               requestId: r.id,

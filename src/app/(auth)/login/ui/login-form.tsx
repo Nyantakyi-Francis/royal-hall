@@ -36,6 +36,7 @@ export default function LoginForm() {
 
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormValues>({
@@ -46,6 +47,7 @@ export default function LoginForm() {
   async function onSubmit(values: FormValues) {
     try {
       setError(null);
+      setLoading(true);
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -57,6 +59,7 @@ export default function LoginForm() {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
         const message = body?.error ? toFriendlyAuthError(body.error) : "Sign in failed";
         setError(message);
+        setLoading(false);
         return;
       }
 
@@ -64,6 +67,7 @@ export default function LoginForm() {
     } catch (e) {
       const message = e instanceof Error ? toFriendlyAuthError(e.message) : "Sign in failed";
       setError(message);
+      setLoading(false);
     }
   }
 
@@ -75,6 +79,7 @@ export default function LoginForm() {
           className="mt-1 w-full rounded-xl border border-black/20 px-3 py-2 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
           placeholder="name@gmail.com"
           autoComplete="email"
+          disabled={loading || isPending || form.formState.isSubmitting}
           {...form.register("email")}
         />
         {form.formState.errors.email && (
@@ -89,6 +94,7 @@ export default function LoginForm() {
             className="w-full rounded-xl border border-black/20 px-3 py-2 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
+            disabled={loading || isPending || form.formState.isSubmitting}
             {...form.register("password")}
           />
           <button
@@ -96,6 +102,7 @@ export default function LoginForm() {
             onClick={() => setShowPassword((v) => !v)}
             className="shrink-0 rounded-xl border border-black/20 bg-white px-3 text-sm font-medium hover:bg-emerald-50"
             aria-pressed={showPassword}
+            disabled={loading || isPending || form.formState.isSubmitting}
           >
             {showPassword ? "Hide" : "View"}
           </button>
@@ -113,7 +120,7 @@ export default function LoginForm() {
 
       <button
         type="submit"
-        disabled={isPending || form.formState.isSubmitting}
+        disabled={loading || isPending || form.formState.isSubmitting}
         className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Signing in…" : "Sign in"}

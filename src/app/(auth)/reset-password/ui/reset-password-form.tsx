@@ -13,6 +13,7 @@ type FormValues = z.infer<typeof schema>;
 export default function ResetPasswordForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { password: "" },
@@ -20,10 +21,12 @@ export default function ResetPasswordForm() {
 
   async function onSubmit(values: FormValues) {
     setError(null);
+    setLoading(true);
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.updateUser({ password: values.password });
     if (error) {
       setError(error.message);
+      setLoading(false);
       return;
     }
     router.push("/login");
@@ -47,9 +50,10 @@ export default function ResetPasswordForm() {
       )}
       <button
         type="submit"
+        disabled={loading || form.formState.isSubmitting}
         className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
       >
-        Update password
+        {loading ? "Updating..." : "Update password"}
       </button>
     </form>
   );

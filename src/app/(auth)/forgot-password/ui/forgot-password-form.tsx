@@ -13,6 +13,7 @@ type FormValues = z.infer<typeof schema>;
 export default function ForgotPasswordForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -22,15 +23,14 @@ export default function ForgotPasswordForm() {
   async function onSubmit(values: FormValues) {
     setError(null);
     setMessage(null);
+    setLoading(true);
     const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    setMessage("Reset link sent. Check your email.");
+    if (error) setError(error.message);
+    else setMessage("Reset link sent. Check your email.");
+    setLoading(false);
   }
 
   return (
@@ -58,9 +58,10 @@ export default function ForgotPasswordForm() {
 
       <button
         type="submit"
+        disabled={loading || form.formState.isSubmitting}
         className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
       >
-        Send reset link
+        {loading ? "Sending..." : "Send reset link"}
       </button>
 
       <div className="text-sm">

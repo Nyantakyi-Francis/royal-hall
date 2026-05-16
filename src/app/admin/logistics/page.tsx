@@ -6,13 +6,17 @@ export const dynamic = "force-dynamic";
 export default async function LogisticsPage() {
   const { supabase } = await requireAdmin();
 
-  const [{ count: memberCount }, { data: items }] = await Promise.all([
+  const [memberRes, itemsRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase
       .from("logistics_items")
       .select("id, item_description, quantity, good_condition, poor_condition, items_in_store, items_in_use")
       .order("item_description", { ascending: true }),
   ]);
+
+  const memberCount = memberRes.count ?? 0;
+  const items = itemsRes.data ?? null;
+  const errorMessage = memberRes.error?.message ?? itemsRes.error?.message ?? null;
 
   const itemsInStore = (items ?? []).reduce((sum, i) => sum + (i.items_in_store ?? 0), 0);
   const itemsInUse = (items ?? []).reduce((sum, i) => sum + (i.items_in_use ?? 0), 0);
@@ -27,10 +31,16 @@ export default async function LogisticsPage() {
         <p className="mt-2 text-sm text-black/80">Totals and inventory (Hall Masters + Hall Presidents).</p>
       </div>
 
+      {errorMessage && (
+        <div className="glass rounded-3xl border border-emerald-900/10 bg-white/70 p-4 text-sm text-black backdrop-blur">
+          Unable to load logistics: <span className="font-medium">{errorMessage}</span>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         <div className="glass-soft rounded-3xl p-6">
           <div className="text-xs text-black/70">Total hall members</div>
-          <div className="mt-2 text-2xl font-semibold">{memberCount ?? 0}</div>
+          <div className="mt-2 text-2xl font-semibold">{memberCount}</div>
         </div>
         <div className="glass-soft rounded-3xl p-6">
           <div className="text-xs text-black/70">Items in store</div>
@@ -70,7 +80,8 @@ export default async function LogisticsPage() {
               {(!items || items.length === 0) && (
                 <tr>
                   <td colSpan={6} className="py-6 text-sm text-black/80">
-                    No items yet.
+                    No items yet. If you already added items in the database, make sure you are signed in as a Hall
+                    Master/President and your RLS admin role is active.
                   </td>
                 </tr>
               )}
@@ -81,4 +92,3 @@ export default async function LogisticsPage() {
     </div>
   );
 }
-
