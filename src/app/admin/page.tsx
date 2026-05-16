@@ -34,9 +34,12 @@ export default async function AdminHomePage() {
             <div className="text-sm font-semibold">Reset passwords</div>
             <div className="mt-1 text-xs text-black/70">Generate a password reset link.</div>
           </Link>
+          <Link href="/admin/confirm-user" className="glass-soft rounded-2xl p-5 hover:bg-emerald-50/60">
+            <div className="text-sm font-semibold">Confirm user email</div>
+            <div className="mt-1 text-xs text-black/70">Manually confirm pending users.</div>
+          </Link>
         </div>
       </div>
     </div>
   );
 }
-

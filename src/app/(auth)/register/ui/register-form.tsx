@@ -35,7 +35,7 @@ export default function RegisterForm() {
       setMessage(null);
       const supabase = createSupabaseBrowserClient();
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -51,7 +51,11 @@ export default function RegisterForm() {
         return;
       }
 
-      setMessage("Account created. Check your email to confirm, then log in.");
+      setMessage(
+        data.session
+          ? "Account created. You can log in now."
+          : "Account created. Check your email to confirm, then log in.",
+      );
       startTransition(() => router.push("/login"));
     } catch (e) {
       const message = e instanceof Error ? e.message : "Registration failed";
