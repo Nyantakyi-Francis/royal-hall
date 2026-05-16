@@ -115,7 +115,6 @@ export default function AdminAllocationsClient({
                   <tr key={r.id} className="text-sm">
                     <td className="border-b border-black/10 py-3 pr-4">
                       <div className="font-medium">{r.student.full_name}</div>
-                      <div className="text-xs text-black">{r.student.user_id}</div>
                     </td>
                     <td className="border-b border-black/10 py-3 pr-4">{r.student.level}</td>
                     <td className="border-b border-black/10 py-3 pr-4">
