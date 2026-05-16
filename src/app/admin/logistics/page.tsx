@@ -6,6 +6,21 @@ export const dynamic = "force-dynamic";
 export default async function LogisticsPage() {
   const { supabase } = await requireAdmin();
 
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id ?? null;
+
+  const [{ data: myProfile }, { data: myAdminRole }, isMasterRes, isPresidentRes] = await Promise.all([
+    userId
+      ? supabase.from("profiles").select("user_id, app_role").eq("user_id", userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    userId
+      ? supabase.from("admin_roles").select("role").eq("user_id", userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // RLS may return empty rows with no error; explicitly check the helper function.
+    supabase.rpc("is_admin", { role_to_check: "HALL_MASTER" }),
+    supabase.rpc("is_admin", { role_to_check: "HALL_PRESIDENT" }),
+  ]);
+
   const [memberRes, itemsRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase
@@ -17,6 +32,9 @@ export default async function LogisticsPage() {
   const memberCount = memberRes.count ?? 0;
   const items = itemsRes.data ?? null;
   const errorMessage = memberRes.error?.message ?? itemsRes.error?.message ?? null;
+
+  const isMaster = Boolean(isMasterRes.data);
+  const isPresident = Boolean(isPresidentRes.data);
 
   const itemsInStore = (items ?? []).reduce((sum, i) => sum + (i.items_in_store ?? 0), 0);
   const itemsInUse = (items ?? []).reduce((sum, i) => sum + (i.items_in_use ?? 0), 0);
@@ -36,6 +54,34 @@ export default async function LogisticsPage() {
           Unable to load logistics: <span className="font-medium">{errorMessage}</span>
         </div>
       )}
+
+      <div className="glass rounded-3xl p-6">
+        <div className="mb-2 text-sm font-medium">Diagnostics</div>
+        <div className="text-xs text-black/80">
+          <div>
+            User: <span className="font-mono">{userId ?? "unknown"}</span>
+          </div>
+          <div>
+            `profiles.app_role`: <span className="font-mono">{(myProfile as any)?.app_role ?? "unknown"}</span>
+          </div>
+          <div>
+            `admin_roles.role`: <span className="font-mono">{(myAdminRole as any)?.role ?? "none"}</span>
+          </div>
+          <div>
+            `is_admin(HALL_MASTER)`: <span className="font-mono">{String(isMaster)}</span>
+          </div>
+          <div>
+            `is_admin(HALL_PRESIDENT)`: <span className="font-mono">{String(isPresident)}</span>
+          </div>
+        </div>
+        {!isMaster && !isPresident && (
+          <div className="mt-3 rounded-2xl border border-emerald-900/10 bg-emerald-50/60 px-3 py-2 text-sm text-black backdrop-blur">
+            RLS doesnâ€™t think youâ€™re an admin, so `logistics_items` will appear empty. Make sure your DB has the
+            latest migrations (especially the `is_admin()` update) and that your user has `profiles.app_role =
+            HALL_MASTER` or `HALL_PRESIDENT`.
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="glass-soft rounded-3xl p-6">
