@@ -89,10 +89,11 @@ export default function AdminAllocationsClient({
             </tr>
           </thead>
           <tbody>
-      {requests.length === 0 ? (
+            {requests.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-6 text-sm text-black">
-                  No pending requests.
+                  No pending requests. If you expect requests here, make sure you’re signed in as a Hall President and
+                  the student has submitted a room request.
                 </td>
               </tr>
             ) : (
