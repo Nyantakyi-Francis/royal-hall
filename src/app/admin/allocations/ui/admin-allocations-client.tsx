@@ -160,7 +160,7 @@ export default function AdminAllocationsClient({
                           }
                           className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
                         >
-                          Approve requested
+                          Approve request
                         </button>
                         <button
                           type="button"
